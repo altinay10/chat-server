@@ -12,7 +12,9 @@ var connections = make(map[string]*websocket.Conn)
 
 func main() {
 	app := fiber.New()
+
 	app.Static("/", "dist")
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return nil
 	})
