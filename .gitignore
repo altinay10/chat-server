@@ -1,3 +1,5 @@
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -14,3 +16,6 @@
 # dotenv environment variables file
 .env
 .env.test
+
+# Vue.js build output
+dist
