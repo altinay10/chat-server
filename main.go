@@ -12,14 +12,11 @@ var connections = make(map[string]*websocket.Conn)
 
 func main() {
 	app := fiber.New()
-
+	app.Static("/", "dist")
 	app.Get("/", func(c *fiber.Ctx) error {
-		c.SendString("giriş yapıldı")
 		return nil
 	})
 	app.Use("/ws", func(c *fiber.Ctx) error {
-		// IsWebSocketUpgrade returns true if the client
-		fmt.Println("girdi buraya")
 		if websocket.IsWebSocketUpgrade(c) {
 			c.Locals("allowed", true)
 			return c.Next()
@@ -28,11 +25,10 @@ func main() {
 	})
 
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
-		// c.Locals is added to the *websocket.Conn
-		log.Println(c.Locals("allowed"))  // true
-		log.Println(c.Params("id"))       // 123
-		log.Println(c.Query("v"))         // 1.0
-		log.Println(c.Cookies("session")) // ""
+		log.Println(c.Locals("allowed"))
+		log.Println(c.Params("id"))
+		log.Println(c.Query("v"))
+		log.Println(c.Cookies("session"))
 		connections[c.Params("id")] = c
 		var (
 			mt  int
