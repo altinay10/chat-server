@@ -8,7 +8,32 @@ import (
 	"github.com/gofiber/websocket/v2"
 )
 
-var connections = make(map[string]*websocket.Conn)
+var clients = make(map[*websocket.Conn]struct{})
+var save = make(chan *websocket.Conn)
+var del = make(chan *websocket.Conn)
+var data = make(chan []byte)
+
+func hub() {
+	for {
+		select {
+		case con := <-save:
+			clients[con] = struct{}{}
+
+		case con := <-del:
+			delete(clients, con)
+
+		case message := <-data:
+			for con := range clients {
+				if err := con.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					log.Println("err : ", err)
+
+					con.Close()
+					delete(clients, con)
+				}
+			}
+		}
+	}
+}
 
 func main() {
 	app := fiber.New()
@@ -26,32 +51,32 @@ func main() {
 		return fiber.ErrUpgradeRequired
 	})
 
+	go hub()
+
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		log.Println(c.Locals("allowed"))
 		log.Println(c.Params("id"))
 		log.Println(c.Query("v"))
 		log.Println(c.Cookies("session"))
-		connections[c.Params("id")] = c
-		var (
-			mt  int
-			msg []byte
-			err error
-		)
+
+		defer func() {
+			del <- c
+			c.Close()
+		}()
+
+		save <- c
 		for {
-			fmt.Println(connections)
-			if mt, msg, err = c.ReadMessage(); err != nil {
-				log.Println("read:", err)
-				delete(connections, c.Params("id"))
-				break
+			fmt.Println("c => ", c)
+			messageType, msg, err := c.ReadMessage()
+			if err != nil {
+				log.Println("err : ", err)
+				return
 			}
 			log.Printf("recv: %s", msg)
-
-			for _, connection := range connections {
-				if err = connection.WriteMessage(mt, msg); err != nil {
-					log.Println("write:", err)
-					delete(connections, c.Params("id"))
-				}
+			if messageType == websocket.TextMessage {
+				data <- msg
 			}
+
 		}
 
 	}))
