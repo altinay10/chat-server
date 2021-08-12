@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"github.com/joho/godotenv"
 )
 
 var clients = make(map[*websocket.Conn]struct{})
@@ -37,6 +39,10 @@ func hub() {
 
 func main() {
 	app := fiber.New()
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Could not load env file")
+	}
 
 	app.Static("/", "dist")
 
@@ -80,5 +86,5 @@ func main() {
 		}
 
 	}))
-	log.Fatal(app.Listen(":8000"))
+	log.Fatal(app.Listen(os.Getenv("port")))
 }
