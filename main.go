@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/websocket/v2"
 	"github.com/joho/godotenv"
 )
@@ -39,6 +40,8 @@ func hub() {
 
 func main() {
 	app := fiber.New()
+
+	app.Use(cors.New())
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Could not load env file")
